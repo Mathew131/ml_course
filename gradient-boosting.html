@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3.2 · Градиентный бустинг — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="gradient-boosting">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 3 · Ансамбли</p>
+        <h1>3.2 Градиентный бустинг</h1>
+        <div class="lesson-meta">
+          <span class="tag">бустинг</span>
+          <span class="tag">ансамбль</span>
+          <span>~14 минут</span>
+        </div>
+
+        <p>
+          Случайный лес строит деревья <em>параллельно</em> и усредняет. Бустинг идёт иначе —
+          <strong>последовательно</strong>: каждое новое дерево исправляет ошибки уже собранного
+          ансамбля. Начинаем с грубого приближения, смотрим, где промахнулись, и учим следующее
+          дерево предсказывать именно этот промах. Складываем — и так шаг за шагом приближаемся
+          к цели.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 150" role="img" aria-label="Последовательное сложение деревьев">
+            <text x="20" y="80" class="svg-label sm">F₀</text>
+            <text x="70" y="80" class="svg-label">+</text>
+            <text x="92" y="70" class="svg-label sm">lr·</text>
+            <rect x="112" y="55" width="46" height="40" rx="4" class="svg-prim" stroke-width="1.5"/>
+            <text x="124" y="80" class="svg-label sm">h₁</text>
+            <text x="170" y="80" class="svg-label">+</text>
+            <text x="192" y="70" class="svg-label sm">lr·</text>
+            <rect x="212" y="55" width="46" height="40" rx="4" class="svg-prim" stroke-width="1.5"/>
+            <text x="224" y="80" class="svg-label sm">h₂</text>
+            <text x="270" y="80" class="svg-label">+</text>
+            <text x="292" y="70" class="svg-label sm">lr·</text>
+            <rect x="312" y="55" width="46" height="40" rx="4" class="svg-prim" stroke-width="1.5"/>
+            <text x="324" y="80" class="svg-label sm">h₃</text>
+            <text x="370" y="80" class="svg-label">+ …</text>
+            <line x1="410" y1="75" x2="450" y2="75" class="svg-acc" stroke-width="2" marker-end="url(#arG)"/>
+            <text x="462" y="80" class="svg-label">F(x)</text>
+            <text x="112" y="125" class="svg-label sm">каждое hₖ учится на остатках предыдущего</text>
+            <defs><marker id="arG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-acc-f"/></marker></defs>
+          </svg>
+          <figcaption>Прогноз — сумма базового значения и множества маленьких деревьев, каждое со своим весом lr.</figcaption>
+        </figure>
+
+        <h2>Почему «градиентный»</h2>
+        <p>
+          Для квадратичной потери «ошибка ансамбля» — это просто <strong>остаток</strong>
+          <code>r = y − F(x)</code>, а он равен антиградиенту потери по предсказанию. Поэтому
+          обучать новое дерево на остатках — то же самое, что делать шаг градиентного спуска,
+          только в пространстве функций:
+        </p>
+        <pre><code>F₀(x) = среднее(y)
+для k = 1..M:
+    rᵢ = yᵢ − F(xᵢ)          <span class="tok-com"># остатки = антиградиент MSE</span>
+    hₖ = дерево, обученное на (xᵢ, rᵢ)
+    F(x) ← F(x) + lr · hₖ(x)  <span class="tok-com"># lr — shrinkage</span></code></pre>
+
+        <div class="callout">
+          <p>
+            <strong>learning rate (shrinkage)</strong> и <strong>число деревьев</strong> работают
+            в паре: маленький lr + много деревьев = плавное, устойчивое обучение. Слишком много
+            деревьев при большом lr — и ансамбль начнёт подгоняться под шум (переобучение). На этом
+            принципе построены XGBoost, LightGBM и CatBoost — топовые модели для табличных данных.
+          </p>
+        </div>
+
+        <h2>Интерактив: ансамбль приближается к цели</h2>
+        <p>
+          Точки порождены кривой с шумом. Ступенчатая линия — предсказание ансамбля. Добавляйте
+          <strong>деревья</strong> и смотрите, как прогноз из плоской прямой (среднее) постепенно
+          облепляет данные. Маленький <strong>lr</strong> — каждое дерево добавляет чуть-чуть,
+          сходимость плавная; большой — рывками. Уведите число деревьев в максимум — увидите, как
+          ступеньки начинают ловить отдельные шумные точки.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>число деревьев M</span>
+              <input id="gb-m" type="range" min="0" max="80" step="1" value="12">
+              <output id="gb-m-v">12</output>
+            </label>
+            <label class="demo-control">
+              <span>learning rate (shrinkage)</span>
+              <input id="gb-lr" type="range" min="0.05" max="1" step="0.05" value="0.3">
+              <output id="gb-lr-v">0.30</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="gb-play" class="btn-action" type="button">▶ Добавлять деревья</button>
+            <button id="gb-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="gb-canvas" class="demo-canvas" width="460" height="320"
+                      aria-label="Бустинг: предсказание ансамбля"></canvas>
+              <p class="demo-caption align-center">ступени — F(x) ансамбля · пунктир — истинная кривая</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>деревьев</strong>: <span id="gb-m2" class="num">—</span></p>
+              <p><strong>lr</strong> = <span id="gb-lr2" class="num">—</span></p>
+              <p><strong>train MSE</strong> = <span id="gb-mse" class="num alt">—</span></p>
+              <p class="demo-caption" style="margin-top:.5em">остаток = то, что ансамбль ещё не объяснил.</p>
+            </div>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>Бустинг строит деревья <strong>последовательно</strong>, каждое исправляет ошибки предыдущих.</li>
+          <li>Для MSE «ошибка» — это <strong>остаток</strong>, равный антиградиенту; отсюда название.</li>
+          <li><strong>lr</strong> и <strong>число деревьев</strong> балансируют между недо- и переобучением.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="gradient-boosting.js"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>7 · Свёрточные сети (CNN) — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="cnn">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 7 · Computer Vision</p>
+        <h1>Свёрточные сети (CNN)</h1>
+        <div class="lesson-meta">
+          <span class="tag">computer vision</span>
+          <span class="tag">свёртка</span>
+          <span class="tag">пулинг</span>
+          <span>~16 минут</span>
+        </div>
+
+        <p>
+          Картинка 200×200 — это 40 000 чисел. Если подать их в полносвязную сеть из
+          <a href="neural-networks.html">главы 6</a>, в первом же слое будут миллионы весов, и
+          сеть никак не использует то, что <em>соседние</em> пиксели связаны, а кошка остаётся
+          кошкой в любом углу кадра. <strong>Свёрточные сети</strong> решают обе проблемы одним
+          приёмом — маленьким окном, которое скользит по всему изображению.
+        </p>
+
+        <h2>Свёртка: ядро скользит по картинке</h2>
+        <p>
+          Берём крошечную матрицу весов — <strong>ядро (kernel)</strong>, например 3×3 — и
+          проходим ею по всем позициям изображения. В каждой позиции считаем поэлементное
+          произведение ядра на пиксели под ним и суммируем. Результат — <strong>карта
+          признаков</strong>: где ядро «совпало» с узором, там отклик сильный.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 540 200" role="img" aria-label="Ядро скользит по изображению">
+            <g class="svg-muted" stroke-width="1">
+              <rect x="30" y="30" width="150" height="150" fill="none"/>
+              <line x1="80" y1="30" x2="80" y2="180"/><line x1="130" y1="30" x2="130" y2="180"/>
+              <line x1="30" y1="80" x2="180" y2="80"/><line x1="30" y1="130" x2="180" y2="130"/>
+            </g>
+            <rect x="30" y="30" width="100" height="100" class="svg-prim" stroke-width="2.5" fill="none"/>
+            <text x="56" y="200" class="svg-label sm">вход + ядро 3×3</text>
+            <line x1="190" y1="105" x2="300" y2="105" class="svg-acc" stroke-width="2" marker-end="url(#arC)"/>
+            <text x="205" y="96" class="svg-label sm">Σ k·x</text>
+            <g class="svg-muted" stroke-width="1">
+              <rect x="320" y="55" width="120" height="100" fill="none"/>
+              <line x1="360" y1="55" x2="360" y2="155"/><line x1="400" y1="55" x2="400" y2="155"/>
+              <line x1="320" y1="88" x2="440" y2="88"/><line x1="320" y1="121" x2="440" y2="121"/>
+            </g>
+            <rect x="320" y="55" width="40" height="33" class="svg-acc-f" opacity="0.5"/>
+            <text x="330" y="200" class="svg-label sm">карта признаков</text>
+            <defs><marker id="arC" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" class="svg-acc-f"/></marker></defs>
+          </svg>
+          <figcaption>Одно и то же ядро применяется ко всем участкам — отсюда экономия весов и устойчивость к сдвигу.</figcaption>
+        </figure>
+
+        <p>
+          Разные ядра ловят разные узоры: одни — вертикальные границы, другие — горизонтальные,
+          размытие, резкость. Ключевая мысль: в настоящей CNN эти ядра <strong>не задаются
+          вручную, а обучаются</strong> тем же backprop — сеть сама решает, какие признаки полезны.
+        </p>
+
+        <h2>Интерактив: примени ядро к изображению</h2>
+        <p>
+          Выберите ядро — справа появится результат свёртки, а в центре его матрица 3×3. Сравните:
+          <em>Собель</em> и <em>лаплас</em> выделяют контуры, <em>размытие</em> усредняет соседей,
+          <em>резкость</em> и <em>тиснение</em> подчёркивают перепады. Можно загрузить
+          <strong>своё фото</strong> — обработка идёт прямо в браузере, ничего никуда не
+          отправляется.
+        </p>
+
+        <div class="demo-box">
+          <div class="chip-row" id="cnn-kernels">
+            <button class="chip" data-k="identity" type="button">тождество</button>
+            <button class="chip active" data-k="sobelx" type="button">Собель X</button>
+            <button class="chip" data-k="sobely" type="button">Собель Y</button>
+            <button class="chip" data-k="laplace" type="button">контуры</button>
+            <button class="chip" data-k="blur" type="button">размытие</button>
+            <button class="chip" data-k="sharpen" type="button">резкость</button>
+            <button class="chip" data-k="emboss" type="button">тиснение</button>
+          </div>
+          <div class="demo-actions">
+            <label class="btn-action ghost" style="cursor:pointer">
+              Загрузить фото
+              <input id="cnn-file" type="file" accept="image/*" style="display:none">
+            </label>
+            <button id="cnn-builtin" class="btn-action ghost" type="button">Встроенная сцена</button>
+            <button id="cnn-pool" class="btn-action ghost" type="button">Max-pooling 2×2: выкл</button>
+          </div>
+
+          <div class="demo-pair" style="grid-template-columns:1fr auto 1fr;align-items:center">
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="cnn-in" class="demo-canvas" width="200" height="200" aria-label="Входное изображение"></canvas>
+              <figcaption>вход (оттенки серого)</figcaption>
+            </figure>
+            <table class="matrix" id="cnn-matrix" aria-label="Матрица ядра"></table>
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="cnn-out" class="demo-canvas" width="200" height="200" aria-label="Результат свёртки"></canvas>
+              <figcaption>карта признаков</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <h2>Пулинг и общая архитектура</h2>
+        <p>
+          После свёртки идёт <strong>пулинг</strong> — он уменьшает карту, оставляя в каждом
+          квадрате 2×2 только максимум. Это сжимает данные, добавляет устойчивость к мелким
+          сдвигам и расширяет «поле зрения» следующих слоёв. (Кнопка Max-pooling выше показывает
+          эффект на результате.)
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 110" role="img" aria-label="Конвейер CNN">
+            <rect x="10" y="35" width="70" height="50" class="svg-acc" stroke-width="1.5"/><text x="24" y="65" class="svg-label sm">вход</text>
+            <rect x="100" y="35" width="70" height="50" class="svg-prim" stroke-width="1.5"/><text x="112" y="65" class="svg-label sm">conv</text>
+            <rect x="190" y="35" width="70" height="50" class="svg-prim" stroke-width="1.5"/><text x="200" y="65" class="svg-label sm">pool</text>
+            <rect x="280" y="35" width="70" height="50" class="svg-prim" stroke-width="1.5"/><text x="290" y="65" class="svg-label sm">conv</text>
+            <rect x="370" y="35" width="70" height="50" class="svg-prim" stroke-width="1.5"/><text x="380" y="65" class="svg-label sm">pool</text>
+            <rect x="460" y="35" width="90" height="50" class="svg-stroke" stroke-width="2"/><text x="468" y="65" class="svg-label sm">класс</text>
+            <g class="svg-muted" stroke-width="1.5">
+              <line x1="80" y1="60" x2="100" y2="60" marker-end="url(#arP2)"/>
+              <line x1="170" y1="60" x2="190" y2="60" marker-end="url(#arP2)"/>
+              <line x1="260" y1="60" x2="280" y2="60" marker-end="url(#arP2)"/>
+              <line x1="350" y1="60" x2="370" y2="60" marker-end="url(#arP2)"/>
+              <line x1="440" y1="60" x2="460" y2="60" marker-end="url(#arP2)"/>
+            </g>
+            <defs><marker id="arP2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" class="svg-muted" fill="var(--midtone)"/></marker></defs>
+          </svg>
+          <figcaption>Типичная CNN: чередование conv+pool извлекает всё более сложные признаки, затем классификатор выносит вердикт.</figcaption>
+        </figure>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li><strong>Свёртка</strong> — общее маленькое ядро для всей картинки: мало весов, устойчивость к сдвигу.</li>
+          <li>Ядра <strong>обучаются</strong>: ранние слои ловят края, поздние — части объектов.</li>
+          <li><strong>Пулинг</strong> сжимает карты и добавляет инвариантность; стек conv+pool — основа CV.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="cnn.js"></script>
+</body>
+</html>

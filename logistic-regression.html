@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1.3 · Логистическая регрессия — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="logistic-regression">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 1 · Линейные модели</p>
+        <h1>1.3 Логистическая регрессия</h1>
+        <div class="lesson-meta">
+          <span class="tag">классификация</span>
+          <span class="tag">вероятности</span>
+          <span class="tag">log-loss</span>
+          <span>~13 минут</span>
+        </div>
+
+        <p>
+          Перцептрон выдаёт жёсткое «+1 / −1», но часто хочется знать <em>вероятность</em>:
+          «с уверенностью 0.92 это класс 1». Логистическая регрессия делает ровно это — берёт
+          линейную комбинацию <code>z = w·x + b</code> и пропускает её через
+          <strong>сигмоиду</strong>, которая сжимает любое число в интервал (0, 1):
+        </p>
+        <pre><code>σ(z) = 1 / (1 + e^(−z))      p(y=1 | x) = σ(w·x + b)</code></pre>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 220" role="img" aria-label="График сигмоиды">
+            <line x1="40" y1="110" x2="540" y2="110" class="svg-muted" stroke-width="1"/>
+            <line x1="290" y1="20" x2="290" y2="200" class="svg-muted" stroke-width="1"/>
+            <path d="M40,195 C200,195 240,120 290,110 C340,100 380,25 540,25" class="svg-prim" stroke-width="2.5"/>
+            <line x1="40" y1="25" x2="540" y2="25" class="svg-muted" stroke-width="1" stroke-dasharray="4 4"/>
+            <line x1="40" y1="195" x2="540" y2="195" class="svg-muted" stroke-width="1" stroke-dasharray="4 4"/>
+            <text x="20" y="30" class="svg-label sm">1</text>
+            <text x="20" y="200" class="svg-label sm">0</text>
+            <text x="300" y="128" class="svg-label sm">0.5</text>
+            <text x="510" y="105" class="svg-label sm">z</text>
+            <circle cx="290" cy="110" r="4" class="svg-acc-f"/>
+          </svg>
+          <figcaption>Сигмоида превращает «расстояние до границы» z в вероятность от 0 до 1; в точке z = 0 вероятность ровно 0.5.</figcaption>
+        </figure>
+
+        <h2>Функция потерь: log-loss</h2>
+        <p>
+          Обучать на квадрате ошибки тут плохо. Используют
+          <strong>логарифмическую потерю</strong> (бинарная кросс-энтропия):
+        </p>
+        <pre><code>L = −(1/n) · Σ [ yᵢ·log(pᵢ) + (1−yᵢ)·log(1−pᵢ) ]</code></pre>
+        <p>
+          Смысл: если истинный класс 1, а модель сказала <code>p≈0</code> — логарифм уходит в
+          огромный штраф. Так log-loss <strong>жёстко наказывает уверенные ошибки</strong> и
+          почти не штрафует уверенные попадания. Минимизируется она тем же градиентным спуском
+          из <a href="linear-regression.html">главы 1.1</a>.
+        </p>
+
+        <h2>Интерактив: подгони сигмоиду под данные</h2>
+        <p>
+          Точки внизу — класс 0, вверху — класс 1, разбросаны по признаку <code>x</code> с
+          перекрытием. Двигайте <strong>наклон w</strong> (крутизну) и <strong>сдвиг b</strong>
+          (положение границы) — кривая вероятности и метрики обновляются. Большой <code>w</code> —
+          кривая резкая, модель очень «уверенная»; малый — пологая, осторожная. Кнопка
+          <em>Обучить</em> запускает градиентный спуск по log-loss и находит оптимум сама.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>наклон w (крутизна сигмоиды)</span>
+              <input id="lg-w" type="range" min="-2" max="14" step="0.1" value="1.5">
+              <output id="lg-w-v">1.5</output>
+            </label>
+            <label class="demo-control">
+              <span>сдвиг b (положение порога)</span>
+              <input id="lg-b" type="range" min="-10" max="10" step="0.1" value="0">
+              <output id="lg-b-v">0.0</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="lg-fit" class="btn-action" type="button">▶ Обучить (GD по log-loss)</button>
+            <button id="lg-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="lg-canvas" class="demo-canvas" width="460" height="320"
+                      aria-label="Логистическая кривая и точки"></canvas>
+              <p class="demo-caption align-center">кривая — p(y=1|x) · пунктир — порог 0.5 · кольцо — ошибка</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>log-loss</strong> = <span id="lg-loss" class="num alt">—</span></p>
+              <p><strong>точность</strong> = <span id="lg-acc" class="num">—</span></p>
+              <p><strong>порог</strong> x₀ = <span id="lg-thr" class="num">—</span></p>
+              <ul class="legend">
+                <li><span class="swatch" style="background:var(--primary)"></span> класс 1</li>
+                <li><span class="swatch" style="background:var(--accent)"></span> класс 0</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li><strong>Сигмоида</strong> превращает линейный выход в вероятность класса.</li>
+          <li><strong>log-loss</strong> сильно штрафует уверенные ошибки — поэтому модель честно калибрует вероятности.</li>
+          <li>Граница решения по-прежнему <em>линейна</em> (порог <code>p = 0.5</code> ⇔ <code>w·x + b = 0</code>) — это «мягкий» перцептрон.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="logistic.js"></script>
+</body>
+</html>

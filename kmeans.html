@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5.1 · K-Means — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="kmeans">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 5 · Кластеризация</p>
+        <h1>5.1 K-Means</h1>
+        <div class="lesson-meta">
+          <span class="tag">без учителя</span>
+          <span class="tag">кластеризация</span>
+          <span>~10 минут</span>
+        </div>
+
+        <p>
+          До сих пор у данных были <em>метки</em> — мы знали правильный ответ. Кластеризация —
+          обучение <strong>без учителя</strong>: меток нет, и задача в том, чтобы самим найти
+          структуру. <strong>K-Means</strong> делит точки на <code>k</code> групп, повторяя два
+          простых шага (алгоритм Ллойда), пока всё не стабилизируется.
+        </p>
+
+        <pre><code>F₀: расставить k центроидов случайно
+повторять:
+    assign  <span class="tok-com"># каждую точку → к ближайшему центроиду</span>
+    update  <span class="tok-com"># центроид → среднее своих точек</span>
+пока назначения меняются</code></pre>
+
+        <h2>Интерактив: как сходятся центроиды</h2>
+        <p>
+          Нажимайте <em>Шаг</em> для одной итерации или <em>Запустить</em> для анимации. Большие
+          ромбы — центроиды, цвет точки — её кластер. Поиграйте с <code>k</code> и нажмите
+          <em>Новые точки</em>: иногда из-за неудачной случайной инициализации алгоритм застревает
+          в плохом разбиении — поэтому на практике его запускают несколько раз.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>число кластеров k</span>
+              <input id="km-k" type="range" min="2" max="6" step="1" value="3">
+              <output id="km-k-v">3</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="km-run" class="btn-action" type="button">▶ Запустить</button>
+            <button id="km-step" class="btn-action ghost" type="button">Шаг</button>
+            <button id="km-regen" class="btn-action ghost" type="button">Новые точки</button>
+          </div>
+
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="km-canvas" class="demo-canvas" width="420" height="420"
+                      aria-label="Кластеризация точек методом K-Means"></canvas>
+              <p class="demo-caption align-center">◆ центроиды · цвет точки = ближайший центроид</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>итерация</strong>: <span id="km-iter" class="num">0</span></p>
+              <p><strong>инерция</strong> = <span id="km-inertia" class="num alt">—</span></p>
+              <p class="demo-caption" style="margin-top:.5em">инерция — сумма квадратов расстояний от точек до своих центроидов; K-Means её минимизирует.</p>
+              <p id="km-status" style="margin-top:1em;opacity:.8;min-height:1.6em"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <p>
+            <strong>Как выбрать k?</strong> Алгоритм не знает «правильное» число групп. Часто
+            используют <em>метод локтя</em>: строят инерцию как функцию k и ищут точку, после
+            которой она почти перестаёт падать. K-Means любит <em>выпуклые</em> кластеры примерно
+            одного размера — для вытянутых или вложенных форм лучше подходят методы из следующих
+            уроков.
+          </p>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li><code>k</code> задаём <strong>мы</strong>; алгоритм лишь оптимизирует расположение центроидов.</li>
+          <li>Результат зависит от <strong>случайной инициализации</strong> — отсюда k-means++ и множественные запуски.</li>
+          <li>Метрика качества — <strong>инерция</strong>: чем меньше, тем компактнее кластеры.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="kmeans.js"></script>
+</body>
+</html>

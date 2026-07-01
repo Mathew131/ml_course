@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5.2 · Иерархическая кластеризация — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="hierarchical">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 5 · Кластеризация</p>
+        <h1>5.2 Иерархическая кластеризация</h1>
+        <div class="lesson-meta">
+          <span class="tag">без учителя</span>
+          <span class="tag">дендрограмма</span>
+          <span>~12 минут</span>
+        </div>
+
+        <p>
+          K-Means требует заранее знать число кластеров <code>k</code>. Иерархическая
+          кластеризация снимает это требование: она строит целое <strong>дерево вложенных
+          группировок</strong> — от «каждая точка сама по себе» до «все в одном кластере». А
+          сколько кластеров взять — решаете потом, просто <em>разрезав</em> дерево на нужной
+          высоте.
+        </p>
+
+        <h2>Агломеративный алгоритм</h2>
+        <pre><code>каждая точка — свой кластер
+повторять:
+    найти два ближайших кластера
+    слить их в один (высота = расстояние)
+пока не останется один кластер</code></pre>
+        <p>
+          «Расстояние между кластерами» определяется <strong>методом связи (linkage)</strong>:
+        </p>
+        <ul>
+          <li><strong>single</strong> — по двум ближайшим точкам. Ловит вытянутые формы, но «цепляется» через мостики.</li>
+          <li><strong>complete</strong> — по двум самым дальним. Даёт компактные шарообразные кластеры.</li>
+          <li><strong>average</strong> — среднее по всем парам. Компромисс между двумя крайностями.</li>
+        </ul>
+
+        <h2>Интерактив: дерево слияний и срез</h2>
+        <p>
+          Слева — точки, окрашенные по текущим кластерам. Справа — <strong>дендрограмма</strong>:
+          высота развилки = на каком расстоянии слились ветви. Двигайте <strong>линию среза</strong>
+          вверх-вниз — где она пересекает ветви, столько и получится кластеров. Переключите
+          <strong>linkage</strong> и сравните форму дерева.
+        </p>
+
+        <div class="demo-box">
+          <div class="chip-row">
+            <button class="chip active" data-link="single" type="button">single</button>
+            <button class="chip" data-link="complete" type="button">complete</button>
+            <button class="chip" data-link="average" type="button">average</button>
+            <button class="chip" id="hc-regen" type="button">новые точки</button>
+          </div>
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>высота среза дендрограммы</span>
+              <input id="hc-cut" type="range" min="0" max="1" step="0.005" value="0.5">
+              <output id="hc-k" class="val">— кластеров</output>
+            </label>
+          </div>
+
+          <div class="demo-pair">
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="hc-points" class="demo-canvas" width="360" height="360"
+                      aria-label="Точки, окрашенные по кластерам"></canvas>
+              <figcaption>кластеры на выбранной высоте среза</figcaption>
+            </figure>
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="hc-dendro" class="demo-canvas" width="360" height="360"
+                      aria-label="Дендрограмма"></canvas>
+              <figcaption>дендрограмма · горизонталь — линия среза</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="callout">
+          <p>
+            <strong>Плюс дендрограммы</strong> — она показывает структуру на всех масштабах сразу:
+            видно и крупные группы, и мелкие подгруппы внутри них. Минус — вычислительная
+            сложность около <code>O(n²)</code>, поэтому для очень больших данных метод тяжёл.
+          </p>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>Строится <strong>дерево вложенных кластеров</strong>, число групп выбирается срезом постфактум.</li>
+          <li><strong>Linkage</strong> сильно влияет на форму: single — «цепочки», complete — «шары».</li>
+          <li>Дендрограмма наглядно показывает иерархию, но дорога для больших выборок.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="hierarchical.js"></script>
+</body>
+</html>

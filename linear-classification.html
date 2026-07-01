@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1.2 · Линейная классификация — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="linear-classification">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 1 · Линейные модели</p>
+        <h1>1.2 Линейная классификация</h1>
+        <div class="lesson-meta">
+          <span class="tag">классификация</span>
+          <span class="tag">перцептрон</span>
+          <span>~12 минут</span>
+        </div>
+
+        <p>
+          Теперь предсказываем не число, а <em>класс</em>. Линейный классификатор проводит
+          <strong>гиперплоскость</strong> (в 2D — прямую) и относит точку к классу по тому,
+          с какой стороны она оказалась:
+        </p>
+        <pre><code>ŷ = sign(w·x + b)   →   +1, если w·x + b ≥ 0, иначе −1</code></pre>
+
+        <p>
+          Самый ранний алгоритм обучения такой модели — <strong>перцептрон Розенблатта</strong>
+          (1958). Идея до гениальности проста: пока есть ошибки, бери ошибочно
+          классифицированную точку и чуть-чуть поворачивай прямую в её сторону.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 220" role="img" aria-label="Схема перцептрона">
+            <circle cx="70" cy="70" r="20" class="svg-acc"/><text x="56" y="75" class="svg-label">x₁</text>
+            <circle cx="70" cy="150" r="20" class="svg-acc"/><text x="56" y="155" class="svg-label">x₂</text>
+            <circle cx="70" cy="190" r="14" class="svg-muted"/><text x="62" y="194" class="svg-label sm">1</text>
+            <rect x="250" y="80" width="90" height="60" rx="6" class="svg-stroke" stroke-width="2"/>
+            <text x="262" y="105" class="svg-label sm">Σ wᵢxᵢ+b</text>
+            <text x="276" y="128" class="svg-label sm">→ sign</text>
+            <line x1="90" y1="70" x2="250" y2="100" class="svg-prim" stroke-width="2" marker-end="url(#arP)"/>
+            <line x1="90" y1="150" x2="250" y2="120" class="svg-prim" stroke-width="2" marker-end="url(#arP)"/>
+            <line x1="84" y1="186" x2="250" y2="135" class="svg-muted" stroke-width="1.5" marker-end="url(#arP)"/>
+            <text x="150" y="70" class="svg-label sm">w₁</text>
+            <text x="150" y="148" class="svg-label sm">w₂</text>
+            <circle cx="430" cy="110" r="22" class="svg-prim"/><text x="416" y="115" class="svg-label">ŷ</text>
+            <line x1="340" y1="110" x2="408" y2="110" class="svg-prim" stroke-width="2" marker-end="url(#arP)"/>
+            <text x="470" y="100" class="svg-label sm">+1</text>
+            <text x="470" y="128" class="svg-label sm">−1</text>
+            <defs><marker id="arP" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-prim-f"/></marker></defs>
+          </svg>
+          <figcaption>Перцептрон: взвешенная сумма входов плюс сдвиг, прогнанная через пороговую функцию sign.</figcaption>
+        </figure>
+
+        <h2>Правило обучения</h2>
+        <pre><code><span class="tok-com"># для каждой ошибочно классифицированной точки (x, y), y ∈ {−1,+1}:</span>
+w ← w + lr · y · x
+b ← b + lr · y</code></pre>
+        <p>
+          Если данные <strong>линейно разделимы</strong>, перцептрон гарантированно найдёт
+          разделяющую прямую за конечное число шагов (теорема Новикова). Если же классы
+          перемешаны — алгоритм будет «дёргать» прямую вечно: одной прямой их не разделить.
+          Эту проблему позже решат <a href="logistic-regression.html">вероятностный подход</a>,
+          <a href="svm.html">максимальный зазор</a> и <a href="neural-networks.html">нелинейные сети</a>.
+        </p>
+
+        <h2>Интерактив: перцептрон ищет границу</h2>
+        <p>
+          Нажмите <em>Запустить</em> — прямая начнёт поворачиваться, исправляя ошибки. Ошибочные
+          точки в каждый момент обведены кольцом. Можно <strong>дорисовать точки</strong> кистью
+          выбранного класса: добавьте «перемешанные» точки в чужую область и увидите, как алгоритм
+          перестаёт сходиться.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>скорость обучения</span>
+              <input id="pc-lr" type="range" min="0.02" max="1" step="0.02" value="0.3">
+              <output id="pc-lr-v">0.30</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="pc-run" class="btn-action" type="button">▶ Запустить</button>
+            <button id="pc-step" class="btn-action ghost" type="button">Шаг</button>
+            <button id="pc-reset" class="btn-action ghost" type="button">Сброс весов</button>
+            <button id="pc-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+          <div class="chip-row">
+            <button class="chip active" id="pc-ca" type="button">кисть: класс +1</button>
+            <button class="chip" id="pc-cb" type="button">кисть: класс −1</button>
+          </div>
+
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="pc-canvas" class="demo-canvas" width="420" height="420"
+                      aria-label="Перцептрон и разделяющая прямая"></canvas>
+              <p class="demo-caption align-center">фон — сторона прямой · кольцо — ошибка · кликом добавляйте точки</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>эпоха</strong>: <span id="pc-epoch" class="num">0</span></p>
+              <p><strong>ошибок</strong>: <span id="pc-err" class="num alt">—</span></p>
+              <p><strong>w</strong> = <span id="pc-w" class="num">—</span></p>
+              <p><strong>b</strong> = <span id="pc-b" class="num">—</span></p>
+              <ul class="legend">
+                <li><span class="swatch" style="background:var(--primary)"></span> класс +1</li>
+                <li><span class="swatch" style="background:var(--accent)"></span> класс −1</li>
+              </ul>
+              <p id="pc-status" style="margin-top:1em;opacity:.8;min-height:1.6em"></p>
+            </div>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>Линейный классификатор — это <strong>разделяющая гиперплоскость</strong> <code>w·x + b = 0</code>.</li>
+          <li>Перцептрон обучается, подталкивая прямую к ошибочным точкам.</li>
+          <li>Он сходится только для линейно разделимых данных — отсюда вырастут логистическая регрессия и SVM.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="perceptron.js"></script>
+</body>
+</html>

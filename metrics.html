@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4 · Оценка качества моделей — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="metrics">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 4</p>
+        <h1>Оценка качества моделей</h1>
+        <div class="lesson-meta">
+          <span class="tag">метрики</span>
+          <span class="tag">регрессия</span>
+          <span class="tag">классификация</span>
+          <span>~16 минут</span>
+        </div>
+
+        <p>
+          Модель обучили — но насколько она хороша? Ответ зависит от задачи и от того,
+          <em>какие ошибки дороже</em>. Здесь разберём метрики регрессии и классификации, поймём,
+          почему точность (accuracy) обманчива, и закончим главной диагностикой бинарных
+          классификаторов — ROC-AUC. Важнейшее правило сквозь всю главу: мерить качество нужно
+          на данных, которых модель <strong>не видела</strong> при обучении.
+        </p>
+
+        <h2>Метрики регрессии</h2>
+        <p>
+          Когда предсказываем число, ошибка — это разница <code>y − ŷ</code>. Свести её к одному
+          числу можно по-разному:
+        </p>
+        <ul>
+          <li><strong>MAE</strong> — средний модуль ошибки. Устойчив к выбросам, в тех же единицах, что и <code>y</code>.</li>
+          <li><strong>MSE</strong> — средний квадрат ошибки. Сильно штрафует крупные промахи.</li>
+          <li><strong>RMSE</strong> — корень из MSE, снова в единицах <code>y</code>.</li>
+          <li><strong>R²</strong> — доля объяснённого разброса: 1 — идеально, 0 — не лучше среднего, &lt;0 — хуже.</li>
+        </ul>
+
+        <h3>Интерактив: как выброс ломает MSE</h3>
+        <p>
+          Точки лежат вдоль модели <code>ŷ = x</code>. Двигайте ползунок — он уводит одну точку
+          (обведена) всё дальше от линии. Следите за метриками: <strong>MAE</strong> растёт
+          линейно, а <strong>MSE/RMSE</strong> — взрывообразно, потому что возводят ошибку в
+          квадрат. Отсюда вывод: при «грязных» данных с выбросами MAE честнее.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>смещение выброса от линии</span>
+              <input id="rm-out" type="range" min="0" max="9" step="0.1" value="1">
+              <output id="rm-out-v">1.0</output>
+            </label>
+          </div>
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="rm-canvas" class="demo-canvas" width="460" height="320"
+                      aria-label="Влияние выброса на метрики регрессии"></canvas>
+              <p class="demo-caption align-center">линия — модель ŷ = x · отрезки — ошибки · кольцо — выброс</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>MAE</strong> = <span id="rm-mae" class="num">—</span></p>
+              <p><strong>MSE</strong> = <span id="rm-mse" class="num alt">—</span></p>
+              <p><strong>RMSE</strong> = <span id="rm-rmse" class="num alt">—</span></p>
+              <p><strong>R²</strong> = <span id="rm-r2" class="num">—</span></p>
+            </div>
+          </div>
+        </div>
+
+        <h2>Метрики классификации</h2>
+        <p>
+          С классами «угадал/не угадал» сложнее. Простая <strong>accuracy</strong> (доля верных)
+          обманывает на несбалансированных данных: если 99% писем не спам, модель «всё не спам»
+          даёт 99% точности и нулевую пользу. Поэтому смотрят на <strong>матрицу ошибок</strong>
+          и производные метрики.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 520 200" role="img" aria-label="Матрица ошибок">
+            <text x="200" y="20" class="svg-label sm">предсказано +</text>
+            <text x="340" y="20" class="svg-label sm">предсказано −</text>
+            <text x="20" y="75" class="svg-label sm">факт +</text>
+            <text x="20" y="135" class="svg-label sm">факт −</text>
+            <rect x="170" y="40" width="140" height="50" class="svg-prim" stroke-width="1.5"/>
+            <text x="210" y="70" class="svg-label">TP</text>
+            <rect x="310" y="40" width="140" height="50" class="svg-acc" stroke-width="1.5"/>
+            <text x="350" y="70" class="svg-label">FN</text>
+            <rect x="170" y="90" width="140" height="50" class="svg-acc" stroke-width="1.5"/>
+            <text x="210" y="120" class="svg-label">FP</text>
+            <rect x="310" y="90" width="140" height="50" class="svg-prim" stroke-width="1.5"/>
+            <text x="350" y="120" class="svg-label">TN</text>
+            <text x="60" y="180" class="svg-label sm">Precision = TP/(TP+FP) · Recall = TP/(TP+FN) · F1 = 2PR/(P+R)</text>
+          </svg>
+          <figcaption>Из матрицы ошибок выводятся precision (точность срабатываний) и recall (полнота охвата).</figcaption>
+        </figure>
+
+        <ul>
+          <li><strong>Precision</strong> — из тех, кого назвали «+», сколько реально «+». Важна, когда дорога ложная тревога.</li>
+          <li><strong>Recall</strong> — из всех реальных «+» сколько поймали. Важна, когда дорого пропустить (болезнь, мошенничество).</li>
+          <li><strong>F1</strong> — гармоническое среднее precision и recall, баланс между ними.</li>
+        </ul>
+
+        <h2>ROC-кривая и AUC</h2>
+        <p>
+          Классификатор выдаёт не «да/нет», а вероятность. Где провести <strong>порог</strong> —
+          компромисс между полнотой и ложными тревогами. ROC-кривая рисует этот компромисс для
+          <em>всех</em> порогов сразу: по осям FPR (ложные тревоги) и TPR (полнота).
+          <strong>AUC</strong> — площадь под ней: 1.0 — идеал, 0.5 — монетка. Удобство AUC в том,
+          что она оценивает модель <em>независимо</em> от выбранного порога.
+        </p>
+
+        <h3>Интерактив: пороги, матрица ошибок и AUC</h3>
+        <p>
+          Первый ползунок — <strong>качество модели</strong> (насколько разделены оценки классов,
+          см. гистограмму). Второй — <strong>порог</strong>. Смотрите, как точка ползёт по
+          ROC-кривой, а ячейки матрицы ошибок и precision/recall перетекают друг в друга.
+        </p>
+
+        <div class="roc-demo demo-box">
+          <div class="roc-controls">
+            <label class="roc-control">
+              <span>Качество модели (разделимость классов)</span>
+              <input id="roc-separation" type="range" min="0" max="1" step="0.01" value="0.65">
+              <output id="roc-separation-val">0.65</output>
+            </label>
+            <label class="roc-control">
+              <span>Порог классификации</span>
+              <input id="roc-threshold" type="range" min="0" max="1" step="0.01" value="0.50">
+              <output id="roc-threshold-val">0.50</output>
+            </label>
+          </div>
+          <div class="roc-layout">
+            <div class="roc-chart-wrap">
+              <canvas id="roc-canvas" aria-label="ROC curve chart"></canvas>
+              <p class="roc-chart-caption align-center">scores histogram · pos=зелёный · neg=циан</p>
+            </div>
+            <div class="roc-metrics">
+              <p><strong>AUC</strong> = <span id="roc-auc">—</span></p>
+              <p><strong>TPR</strong> (recall) = <span id="roc-tpr">—</span></p>
+              <p><strong>FPR</strong> = <span id="roc-fpr">—</span></p>
+              <p><strong>Precision</strong> = <span id="roc-precision">—</span></p>
+              <table class="confusion-matrix">
+                <caption>Confusion matrix @ threshold</caption>
+                <thead><tr><th></th><th>pred +</th><th>pred −</th></tr></thead>
+                <tbody>
+                  <tr><th>actual +</th><td id="cm-tp">—</td><td id="cm-fn">—</td></tr>
+                  <tr><th>actual −</th><td id="cm-fp">—</td><td id="cm-tn">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>Метрику выбирают под задачу: <strong>MAE</strong> устойчив к выбросам, <strong>MSE</strong> — нет.</li>
+          <li><strong>Accuracy</strong> обманчива на дисбалансе — смотрите precision, recall, F1.</li>
+          <li><strong>ROC-AUC</strong> оценивает классификатор по всем порогам сразу.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="regression-metrics.js"></script>
+  <script src="roc-auc.js"></script>
+</body>
+</html>

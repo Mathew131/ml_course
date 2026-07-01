@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3.1 · Случайный лес — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="random-forest">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 3 · Ансамбли</p>
+        <h1>3.1 Случайный лес</h1>
+        <div class="lesson-meta">
+          <span class="tag">бэггинг</span>
+          <span class="tag">ансамбль</span>
+          <span>~12 минут</span>
+        </div>
+
+        <p>
+          Одно глубокое дерево умное, но капризное: чуть сдвинь данные — и граница перестроится.
+          Это высокий <em>разброс</em> (variance). Идея ансамбля — «мудрость толпы»: обучим
+          <strong>много</strong> разных деревьев и усредним их голоса. Ошибки отдельных деревьев
+          случайны и взаимно гасятся, а общий сигнал остаётся. Так работает <strong>бэггинг</strong>
+          (bootstrap aggregating), а случайный лес — его самая известная реализация.
+        </p>
+
+        <h2>Откуда берётся разнообразие</h2>
+        <ol>
+          <li><strong>Bootstrap</strong>: каждое дерево учится на своей случайной выборке с
+            возвращением — кто-то из объектов попадёт несколько раз, кого-то не будет вовсе.</li>
+          <li><strong>Случайные признаки</strong>: в каждом узле дерево выбирает лучший раскол не
+            из всех признаков, а из случайного подмножества. Это «декоррелирует» деревья, чтобы
+            они не были копиями друг друга.</li>
+        </ol>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 200" role="img" aria-label="Схема случайного леса">
+            <rect x="30" y="80" width="80" height="40" rx="4" class="svg-stroke" stroke-width="1.5"/>
+            <text x="44" y="104" class="svg-label sm">данные</text>
+            <g class="svg-acc">
+              <path d="M150,60 l24,0 m-12,-12 l0,24" stroke-width="0"/>
+            </g>
+            <!-- three trees -->
+            <g>
+              <circle cx="220" cy="45" r="6" class="svg-prim-f"/><circle cx="205" cy="65" r="5" class="svg-acc-f"/><circle cx="235" cy="65" r="5" class="svg-prim-f"/>
+              <line x1="220" y1="51" x2="205" y2="60" class="svg-muted"/><line x1="220" y1="51" x2="235" y2="60" class="svg-muted"/>
+              <text x="248" y="58" class="svg-label sm">tree 1</text>
+            </g>
+            <g>
+              <circle cx="220" cy="95" r="6" class="svg-prim-f"/><circle cx="205" cy="115" r="5" class="svg-prim-f"/><circle cx="235" cy="115" r="5" class="svg-acc-f"/>
+              <line x1="220" y1="101" x2="205" y2="110" class="svg-muted"/><line x1="220" y1="101" x2="235" y2="110" class="svg-muted"/>
+              <text x="248" y="108" class="svg-label sm">tree 2</text>
+            </g>
+            <g>
+              <circle cx="220" cy="145" r="6" class="svg-prim-f"/><circle cx="205" cy="165" r="5" class="svg-acc-f"/><circle cx="235" cy="165" r="5" class="svg-acc-f"/>
+              <line x1="220" y1="151" x2="205" y2="160" class="svg-muted"/><line x1="220" y1="151" x2="235" y2="160" class="svg-muted"/>
+              <text x="248" y="158" class="svg-label sm">tree 3</text>
+            </g>
+            <line x1="110" y1="100" x2="195" y2="55" class="svg-muted" stroke-width="1.2"/>
+            <line x1="110" y1="100" x2="195" y2="105" class="svg-muted" stroke-width="1.2"/>
+            <line x1="110" y1="100" x2="195" y2="155" class="svg-muted" stroke-width="1.2"/>
+            <rect x="330" y="80" width="120" height="40" rx="4" class="svg-prim" stroke-width="1.5"/>
+            <text x="342" y="104" class="svg-label sm">голосование</text>
+            <line x1="290" y1="55" x2="330" y2="95" class="svg-muted" stroke-width="1.2"/>
+            <line x1="290" y1="105" x2="330" y2="100" class="svg-muted" stroke-width="1.2"/>
+            <line x1="290" y1="155" x2="330" y2="105" class="svg-muted" stroke-width="1.2"/>
+            <line x1="450" y1="100" x2="500" y2="100" class="svg-prim" stroke-width="2" marker-end="url(#arF)"/>
+            <text x="468" y="92" class="svg-label sm">ŷ</text>
+            <defs><marker id="arF" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-prim-f"/></marker></defs>
+          </svg>
+          <figcaption>Каждое дерево учится на своей подвыборке; итоговое предсказание — усреднение (голосование) всех деревьев.</figcaption>
+        </figure>
+
+        <h2>Интерактив: одно дерево против леса</h2>
+        <p>
+          Данные — две «луны», которые не разделить осями ровно. Слева — граница <strong>одного
+          глубокого дерева</strong>: рваная, ступенчатая, цепляется за шум. Справа — <strong>лес</strong>
+          из нескольких деревьев: двигайте число деревьев и смотрите, как усреднение сглаживает
+          границу и повышает точность. Это и есть снижение разброса.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>число деревьев в лесу</span>
+              <input id="rf-n" type="range" min="1" max="60" step="1" value="25">
+              <output id="rf-n-v">25</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="rf-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+
+          <div class="demo-pair">
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="rf-single" class="demo-canvas" width="360" height="360"
+                      aria-label="Граница одного дерева"></canvas>
+              <figcaption>одно глубокое дерево · точность на тесте <span id="rf-acc1" class="num">—</span></figcaption>
+            </figure>
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="rf-forest" class="demo-canvas" width="360" height="360"
+                      aria-label="Граница случайного леса"></canvas>
+              <figcaption>лес · точность на тесте <span id="rf-acc2" class="num">—</span></figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div class="callout">
+          <p>
+            <strong>Почему лес плавнее.</strong> У каждого дерева граница — ступеньки в разных
+            местах (из-за разных подвыборок). Усреднив их вероятности, мы получаем мягкий переход:
+            там, где деревья «спорят», уверенность около 0.5. Бонус бэггинга — <em>OOB-оценка</em>:
+            точность можно мерить на объектах, не попавших в бутстрэп, без отдельной выборки.
+          </p>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>Случайный лес = <strong>много декоррелированных деревьев</strong> + усреднение.</li>
+          <li>Разнообразие даёт <strong>bootstrap</strong> (случайные объекты) и <strong>случайные признаки</strong> в узлах.</li>
+          <li>Ансамбль резко снижает разброс — поэтому работает точнее и стабильнее одного дерева.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="cart.js"></script>
+  <script src="random-forest.js"></script>
+</body>
+</html>

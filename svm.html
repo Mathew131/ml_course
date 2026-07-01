@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1.4 · Метод опорных векторов — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="svm">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 1 · Линейные модели</p>
+        <h1>1.4 Метод опорных векторов (SVM)</h1>
+        <div class="lesson-meta">
+          <span class="tag">классификация</span>
+          <span class="tag">максимальный зазор</span>
+          <span>~14 минут</span>
+        </div>
+
+        <p>
+          Перцептрон находит <em>какую-нибудь</em> разделяющую прямую — а их бесконечно много.
+          Какая лучшая? SVM отвечает: та, что проходит <strong>как можно дальше от обоих
+          классов</strong>, оставляя широкую «полосу безопасности» — <strong>зазор (margin)</strong>.
+          Чем шире зазор, тем устойчивее модель к новым точкам.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 240" role="img" aria-label="Максимальный зазор и опорные векторы">
+            <line x1="80" y1="40" x2="500" y2="210" class="svg-stroke" stroke-width="2"/>
+            <line x1="120" y1="20" x2="540" y2="190" class="svg-muted" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <line x1="40" y1="60" x2="460" y2="230" class="svg-muted" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <text x="300" y="120" class="svg-label sm">граница w·x+b=0</text>
+            <!-- class + (primary) -->
+            <circle cx="180" cy="55" r="7" class="svg-prim-f"/>
+            <circle cx="240" cy="45" r="7" class="svg-prim-f"/>
+            <circle cx="150" cy="95" r="7" class="svg-prim-f" stroke="var(--contrast)" stroke-width="2"/>
+            <!-- class - (accent) -->
+            <circle cx="360" cy="195" r="7" class="svg-acc-f"/>
+            <circle cx="420" cy="185" r="7" class="svg-acc-f"/>
+            <circle cx="330" cy="160" r="7" class="svg-acc-f" stroke="var(--contrast)" stroke-width="2"/>
+            <text x="120" y="120" class="svg-label sm">опорные</text>
+            <text x="250" y="200" class="svg-label sm">зазор 2/‖w‖</text>
+            <line x1="300" y1="115" x2="270" y2="150" class="svg-muted" stroke-width="1" marker-end="url(#arS)"/>
+            <defs><marker id="arS" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-muted" fill="var(--midtone)"/></marker></defs>
+          </svg>
+          <figcaption>Опорные векторы (обведены) — ближайшие к границе точки; именно они определяют положение разделяющей прямой.</figcaption>
+        </figure>
+
+        <h2>Hinge-loss и параметр C</h2>
+        <p>
+          В реальных данных классы перекрываются, идеально разделить нельзя. Тогда SVM разрешает
+          нарушения, штрафуя их <strong>hinge-функцией</strong> потерь, и оптимизирует компромисс:
+        </p>
+        <pre><code>min  ½‖w‖²  +  C · Σ max(0, 1 − yᵢ·(w·xᵢ + b))
+       └широкий зазор┘        └штраф за нарушителей┘</code></pre>
+        <p>
+          Параметр <code>C</code> задаёт баланс:
+        </p>
+        <ol>
+          <li><strong>малый C</strong> — зазор важнее: широкая полоса, допускаем больше ошибок (сильная регуляризация);</li>
+          <li><strong>большой C</strong> — точность важнее: узкий зазор, почти не терпим нарушителей (риск переобучения).</li>
+        </ol>
+
+        <div class="callout">
+          <p>
+            <strong>Kernel trick.</strong> Если классы не делятся прямой, SVM неявно переносит
+            точки в пространство более высокой размерности (ядром, например RBF), где они
+            становятся линейно разделимы — а граница в исходном пространстве получается
+            искривлённой. Здесь мы показываем базовый линейный случай.
+          </p>
+        </div>
+
+        <h2>Интерактив: ширина зазора и параметр C</h2>
+        <p>
+          Нажмите <em>Обучить</em> — SVM субградиентным спуском по hinge-loss найдёт границу.
+          Сплошная линия — разделяющая, пунктирные — края зазора, обведённые точки — опорные
+          векторы. Двигайте <strong>C</strong> и наблюдайте: при малом C полоса широкая и
+          опорных векторов много; при большом — узкая и цепляется за крайние точки.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>параметр C (log-шкала)</span>
+              <input id="svm-c" type="range" min="-1" max="2" step="0.05" value="0.3">
+              <output id="svm-c-v">2.0</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="svm-fit" class="btn-action" type="button">▶ Обучить</button>
+            <button id="svm-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="svm-canvas" class="demo-canvas" width="420" height="420"
+                      aria-label="SVM: граница, зазор и опорные векторы"></canvas>
+              <p class="demo-caption align-center">сплошная — граница · пунктир — края зазора · кольцо — опорный вектор</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>C</strong> = <span id="svm-c2" class="num">—</span></p>
+              <p><strong>ширина зазора</strong> = <span id="svm-margin" class="num alt">—</span></p>
+              <p><strong>опорных векторов</strong>: <span id="svm-sv" class="num">—</span></p>
+              <p><strong>точность</strong> = <span id="svm-acc" class="num">—</span></p>
+              <ul class="legend">
+                <li><span class="swatch" style="background:var(--primary)"></span> класс +1</li>
+                <li><span class="swatch" style="background:var(--accent)"></span> класс −1</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>SVM ищет границу с <strong>максимальным зазором</strong> — она обобщает лучше произвольной разделяющей.</li>
+          <li>Положение границы определяют только <strong>опорные векторы</strong>, остальные точки не важны.</li>
+          <li><code>C</code> регулирует «жёсткость»; <strong>ядра</strong> дают нелинейные границы без явного перехода в большую размерность.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="svm.js"></script>
+</body>
+</html>

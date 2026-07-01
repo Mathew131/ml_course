@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2 · Решающие деревья — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="decision-trees">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 2</p>
+        <h1>Решающие деревья</h1>
+        <div class="lesson-meta">
+          <span class="tag">классификация</span>
+          <span class="tag">интерпретируемость</span>
+          <span>~13 минут</span>
+        </div>
+
+        <p>
+          Линейные модели режут пространство одной прямой. Решающее дерево действует иначе и
+          куда ближе к человеческой логике: задаёт цепочку вопросов «да/нет» по одному признаку
+          за раз — <code>x &lt; 3?</code>, затем <code>y &gt; 1?</code> — и так дробит плоскость
+          на прямоугольники, в каждом из которых выносит вердикт. Никакой математики градиентов,
+          сплошные <strong>if-else</strong>.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 560 230" role="img" aria-label="Схема решающего дерева">
+            <rect x="230" y="14" width="110" height="34" rx="4" class="svg-stroke" stroke-width="1.5"/>
+            <text x="246" y="35" class="svg-label sm">x &lt; 3 ?</text>
+            <rect x="110" y="96" width="110" height="34" rx="4" class="svg-stroke" stroke-width="1.5"/>
+            <text x="126" y="117" class="svg-label sm">y &lt; 1 ?</text>
+            <rect x="350" y="96" width="110" height="34" rx="4" class="svg-acc" stroke-width="1.5"/>
+            <text x="380" y="117" class="svg-label sm">класс A</text>
+            <rect x="40" y="180" width="110" height="34" rx="4" class="svg-prim" stroke-width="1.5"/>
+            <text x="70" y="201" class="svg-label sm">класс B</text>
+            <rect x="180" y="180" width="110" height="34" rx="4" class="svg-acc" stroke-width="1.5"/>
+            <text x="210" y="201" class="svg-label sm">класс A</text>
+            <line x1="270" y1="48" x2="165" y2="96" class="svg-muted" stroke-width="1.5"/>
+            <line x1="300" y1="48" x2="405" y2="96" class="svg-muted" stroke-width="1.5"/>
+            <line x1="150" y1="130" x2="95" y2="180" class="svg-muted" stroke-width="1.5"/>
+            <line x1="180" y1="130" x2="235" y2="180" class="svg-muted" stroke-width="1.5"/>
+            <text x="195" y="78" class="svg-label sm">да</text>
+            <text x="350" y="78" class="svg-label sm">нет</text>
+          </svg>
+          <figcaption>Дерево — это вложенные вопросы по признакам; путь от корня к листу даёт предсказание.</figcaption>
+        </figure>
+
+        <h2>Как выбирается вопрос: критерий Джини</h2>
+        <p>
+          На каждом узле алгоритм перебирает все признаки и все пороги и выбирает разбиение,
+          которое делает потомков как можно «чище» — с преобладанием одного класса. Чистоту
+          мерят <strong>impurity Джини</strong>:
+        </p>
+        <pre><code>Gini = 1 − Σ pₖ²      (0 — узел из одного класса, 0.5 — 50/50)</code></pre>
+        <p>
+          Лучший вопрос — тот, что сильнее всего снижает взвешенный Gini потомков. Процесс
+          рекурсивно повторяется, пока узлы не станут чистыми или не сработает ограничение
+          <strong>глубины</strong>. Чем глубже дерево — тем сложнее граница и тем выше риск
+          переобучения: на максимальной глубине дерево просто запомнит каждую точку.
+        </p>
+
+        <h2>Интерактив: дерево режет плоскость</h2>
+        <p>
+          Слева — как дерево делит плоскость на прямоугольные области (фон = предсказанный класс),
+          справа — само дерево. Двигайте <strong>максимальную глубину</strong>: на глубине 1 —
+          один разрез, дальше граница дробится всё мельче, повторяя каждую точку. Кликните по
+          левому полю, чтобы добавить точку выбранного класса и пересобрать дерево.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>максимальная глубина дерева</span>
+              <input id="dt-depth" type="range" min="1" max="6" step="1" value="3">
+              <output id="dt-depth-v">3</output>
+            </label>
+          </div>
+          <div class="chip-row">
+            <button class="chip active" id="dt-ca" type="button">кисть: класс A</button>
+            <button class="chip" id="dt-cb" type="button">кисть: класс B</button>
+            <button class="chip" id="dt-regen" type="button">новые данные</button>
+          </div>
+
+          <div class="demo-pair">
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="dt-regions" class="demo-canvas" width="360" height="360"
+                      aria-label="Разбиение плоскости деревом"></canvas>
+              <figcaption>области решений · кликом добавляйте точки</figcaption>
+            </figure>
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="dt-tree" class="demo-canvas" width="360" height="360"
+                      aria-label="Структура дерева"></canvas>
+              <figcaption>структура дерева (зелёный/циан — листья классов)</figcaption>
+            </figure>
+          </div>
+
+          <div class="stat-list" style="margin-top:1.5em;display:grid;grid-template-columns:repeat(auto-fit,minmax(16ch,1fr));gap:.4em 2ch">
+            <p><strong>глубина</strong>: <span id="dt-d" class="num">—</span></p>
+            <p><strong>листьев</strong>: <span id="dt-leaves" class="num alt">—</span></p>
+            <p><strong>точность на обучении</strong>: <span id="dt-acc" class="num">—</span></p>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>Дерево — это вложенные пороговые вопросы; граница всегда <strong>ступенчатая</strong> (по осям).</li>
+          <li>Разбиения выбираются жадно по снижению <strong>impurity</strong> (Джини или энтропии).</li>
+          <li>Глубокое дерево легко переобучается — поэтому деревья объединяют в <a href="random-forest.html">ансамбли</a>.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="cart.js"></script>
+  <script src="decision-tree.js"></script>
+</body>
+</html>

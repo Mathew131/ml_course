@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5.3 · DBSCAN — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="dbscan">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 5 · Кластеризация</p>
+        <h1>5.3 DBSCAN</h1>
+        <div class="lesson-meta">
+          <span class="tag">без учителя</span>
+          <span class="tag">плотность</span>
+          <span class="tag">выбросы</span>
+          <span>~12 минут</span>
+        </div>
+
+        <p>
+          K-Means ищет круглые сгустки и обязан разложить <em>все</em> точки по кластерам, даже
+          явные выбросы. DBSCAN смотрит на мир иначе — через <strong>плотность</strong>: кластер
+          это область, где точки лежат тесно, разделённая разреженными промежутками. Что важно,
+          DBSCAN сам определяет число кластеров и честно помечает редкие точки как
+          <strong>шум</strong>.
+        </p>
+
+        <h2>Два параметра, три типа точек</h2>
+        <p>
+          Алгоритм задаётся радиусом окрестности <code>eps</code> и минимальным числом соседей
+          <code>minPts</code>. Каждая точка попадает в один из трёх типов:
+        </p>
+        <ul>
+          <li><strong>Ядровая (core)</strong> — в её eps-окрестности не меньше <code>minPts</code> точек. Сердце кластера.</li>
+          <li><strong>Граничная (border)</strong> — соседей мало, но она попадает в окрестность какой-то ядровой.</li>
+          <li><strong>Шум (noise)</strong> — ни то, ни другое. Выброс, не входит ни в один кластер.</li>
+        </ul>
+        <p>
+          Кластеры «вырастают» из ядровых точек: соединяя плотно достижимые друг от друга точки,
+          DBSCAN находит кластеры <strong>произвольной формы</strong> — изогнутые, вытянутые,
+          вложенные — там, где K-Means бессилен.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 520 180" role="img" aria-label="Core, border и noise точки">
+            <circle cx="120" cy="90" r="46" class="svg-muted" stroke-width="1" stroke-dasharray="4 4"/>
+            <circle cx="120" cy="90" r="7" class="svg-prim-f"/>
+            <circle cx="100" cy="70" r="5" class="svg-prim-f"/><circle cx="140" cy="75" r="5" class="svg-prim-f"/>
+            <circle cx="105" cy="110" r="5" class="svg-prim-f"/><circle cx="140" cy="108" r="5" class="svg-prim-f"/>
+            <text x="92" y="160" class="svg-label sm">core + eps</text>
+            <circle cx="250" cy="90" r="7" class="svg-acc"/>
+            <circle cx="285" cy="95" r="5" class="svg-prim-f"/>
+            <line x1="257" y1="90" x2="280" y2="93" class="svg-muted" stroke-dasharray="3 3"/>
+            <text x="232" y="160" class="svg-label sm">border</text>
+            <text x="360" y="95" class="svg-label" style="fill:var(--midtone)">✕</text>
+            <text x="356" y="160" class="svg-label sm">noise</text>
+          </svg>
+          <figcaption>Ядровая точка имеет ≥ minPts соседей в радиусе eps; граничная примыкает к ядровой; остальное — шум.</figcaption>
+        </figure>
+
+        <h2>Интерактив: плотность, шум и форма</h2>
+        <p>
+          Данные — две изогнутые «луны» плюс случайный шум. Крутите <strong>eps</strong> и
+          <strong>minPts</strong>: при удачных значениях DBSCAN выделит обе луны и пометит редкие
+          точки крестиками-шумом. Слишком маленький eps — всё рассыплется в шум; слишком большой —
+          кластеры сольются в один. Ядровые точки залиты, граничные — обведены.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>радиус eps</span>
+              <input id="db-eps" type="range" min="0.3" max="2.5" step="0.05" value="0.9">
+              <output id="db-eps-v">0.90</output>
+            </label>
+            <label class="demo-control">
+              <span>minPts (мин. соседей для ядра)</span>
+              <input id="db-min" type="range" min="2" max="10" step="1" value="4">
+              <output id="db-min-v">4</output>
+            </label>
+          </div>
+          <div class="demo-actions">
+            <button id="db-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+
+          <div class="demo-layout">
+            <div class="demo-canvas-wrap">
+              <canvas id="db-canvas" class="demo-canvas" width="420" height="420"
+                      aria-label="DBSCAN: кластеры по плотности"></canvas>
+              <p class="demo-caption align-center">залито — core · обведено — border · ✕ — noise · круг — масштаб eps</p>
+            </div>
+            <div class="stat-list">
+              <p><strong>кластеров</strong>: <span id="db-clusters" class="num">—</span></p>
+              <p><strong>шумовых точек</strong>: <span id="db-noise" class="num alt">—</span></p>
+              <p><strong>eps</strong> = <span id="db-eps2" class="num">—</span></p>
+              <p><strong>minPts</strong> = <span id="db-min2" class="num">—</span></p>
+            </div>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li>DBSCAN находит кластеры <strong>произвольной формы</strong> и сам определяет их число.</li>
+          <li>Редкие точки честно помечаются как <strong>шум</strong> — встроенный детектор выбросов.</li>
+          <li>Цена — чувствительность к <code>eps</code>; для кластеров разной плотности подбор параметров непрост.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="dbscan.js"></script>
+</body>
+</html>

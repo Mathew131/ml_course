@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1.1 · Линейная регрессия — ML Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="linear-regression">
+  <div class="wp-site-blocks">
+    <main class="site-main">
+      <div class="content-area">
+        <p class="lesson-kicker">Глава 1 · Линейные модели</p>
+        <h1>1.1 Линейная регрессия</h1>
+        <div class="lesson-meta">
+          <span class="tag">регрессия</span>
+          <span class="tag">SGD</span>
+          <span class="tag">регуляризация</span>
+          <span>~15 минут</span>
+        </div>
+
+        <p>
+          Самая простая модель машинного обучения: предсказываем число как взвешенную сумму
+          признаков. Для одного признака это прямая <code>ŷ = w·x + b</code>. Задача обучения —
+          найти веса <code>w</code> и сдвиг <code>b</code>, при которых предсказания ближе всего
+          к истине. На этом крошечном примере удобно разобрать три вещи, без которых не обходится
+          ни одна модель: <strong>функцию потерь</strong>, <strong>градиентный спуск (SGD)</strong>
+          и <strong>регуляризацию</strong>.
+
+        </p>
+
+        <h2>Функция потерь</h2>
+        <p>
+          «Ближе всего» нужно измерить числом. Для регрессии берут
+          <strong>средний квадрат ошибки</strong> (MSE):
+        </p>
+        <pre><code>L(w, b) = (1/n) · Σ (w·xᵢ + b − yᵢ)²</code></pre>
+        <p>
+          Квадрат сильнее штрафует крупные промахи и делает <code>L</code> гладкой «чашей» по
+          параметрам — у такой функции один минимум, и к нему можно скатиться. Именно эту
+          поверхность вы будете видеть справа в интерактиве.
+        </p>
+
+        <figure class="figure">
+          <svg viewBox="0 0 640 220" role="img" aria-label="Шаг градиентного спуска по параболе потерь">
+            <line x1="40" y1="190" x2="600" y2="190" class="svg-muted" stroke-width="1"/>
+            <line x1="60" y1="20" x2="60" y2="200" class="svg-muted" stroke-width="1"/>
+            <text x="20" y="30" class="svg-label sm">L</text>
+            <text x="595" y="208" class="svg-label sm">w</text>
+            <path d="M70,40 Q330,330 590,40" class="svg-acc" stroke-width="2.5"/>
+            <!-- ball + step arrow -->
+            <circle cx="150" cy="150" r="8" class="svg-prim-f"/>
+            <circle cx="250" cy="118" r="8" class="svg-prim-f" opacity="0.55"/>
+            <circle cx="330" cy="186" r="8" class="svg-prim-f" opacity="0.3"/>
+            <path d="M165,150 L235,122" class="svg-prim" stroke-width="2" marker-end="url(#arrA)"/>
+            <path d="M265,118 L318,176" class="svg-prim" stroke-width="2" marker-end="url(#arrA)"/>
+            <text x="120" y="135" class="svg-label sm">−lr·∇L</text>
+            <text x="350" y="180" class="svg-label">минимум</text>
+            <defs>
+              <marker id="arrA" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" class="svg-prim-f"/>
+              </marker>
+            </defs>
+          </svg>
+          <figcaption>Градиентный спуск: на каждом шаге сдвигаемся против градиента, размер шага задаёт learning rate.</figcaption>
+        </figure>
+
+        <h2>SGD: GD, mini-batch и стохастический</h2>
+        <p>
+          Чтобы найти минимум, считаем <strong>градиент</strong> потерь по параметрам (наклон
+          «чаши») и делаем шаг в обратную сторону: <code>w ← w − lr·∂L/∂w</code>. Разница в том,
+          на скольких объектах считать градиент за один шаг:
+        </p>
+        <ol>
+          <li><strong>Batch GD</strong> — по всем объектам сразу. Точное направление, но медленно на больших данных.</li>
+          <li><strong>SGD</strong> — по одному случайному объекту. Шумно, шаги «дрожат», зато быстро и часто.</li>
+          <li><strong>Mini-batch</strong> — золотая середина: по небольшой пачке (32, 64…). Так учат почти всё на практике.</li>
+        </ol>
+
+        <div class="callout">
+          <p>
+            <strong>learning rate</strong> — главный гиперпараметр. Слишком мал — спуск ползёт
+            вечно; слишком велик — траектория перепрыгивает минимум и расходится. Малый batch
+            добавляет «дрожь», которая иногда даже помогает выбраться из плохих участков.
+          </p>
+        </div>
+
+        <h2>Регуляризация</h2>
+        <p>
+          Если признаков много, модель может подогнать веса под шум — это переобучение (подробно
+          в <a href="metrics.html">главе 4</a>). Лечат добавкой штрафа за большие веса прямо в
+          функцию потерь:
+        </p>
+        <pre><code><span class="tok-com"># L2 (Ridge): штраф за квадрат весов — мягко тянет к нулю</span>
+L = MSE + λ · Σ wⱼ²
+<span class="tok-com"># L1 (Lasso): штраф за модуль — обнуляет лишние признаки</span>
+L = MSE + λ · Σ |wⱼ|</code></pre>
+        <p>
+          Коэффициент <code>λ</code> регулирует силу: при <code>λ=0</code> регуляризации нет,
+          с ростом <code>λ</code> веса всё сильнее «прижимаются» к нулю, прямая становится
+          более пологой и устойчивой к выбросам.
+        </p>
+
+        <h2>Интерактив: спуск по поверхности потерь</h2>
+        <p>
+          Слева — данные и текущая прямая. Справа — та самая «чаша» потерь над пространством
+          параметров <code>(w, b)</code>: ярче = меньше ошибка. Точка ползёт по ней к минимуму,
+          оставляя след. Поиграйте: уменьшите <strong>batch</strong> до 1 — траектория задрожит
+          (настоящий SGD); поднимите <strong>learning rate</strong> почти до предела — точка
+          начнёт перескакивать минимум; увеличьте <strong>λ</strong> — минимум сместится к нулю
+          и прямая ляжет более полого.
+        </p>
+
+        <div class="demo-box">
+          <div class="demo-controls">
+            <label class="demo-control">
+              <span>learning rate</span>
+              <input id="sgd-lr" type="range" min="0.005" max="0.6" step="0.005" value="0.12">
+              <output id="sgd-lr-v">0.120</output>
+            </label>
+            <label class="demo-control">
+              <span>размер batch (1 = чистый SGD)</span>
+              <input id="sgd-batch" type="range" min="1" max="40" step="1" value="8">
+              <output id="sgd-batch-v">8</output>
+            </label>
+            <label class="demo-control">
+              <span>регуляризация λ (L2)</span>
+              <input id="sgd-lambda" type="range" min="0" max="1.5" step="0.01" value="0">
+              <output id="sgd-lambda-v">0.00</output>
+            </label>
+          </div>
+
+          <div class="demo-actions">
+            <button id="sgd-run" class="btn-action" type="button">▶ Запустить</button>
+            <button id="sgd-step" class="btn-action ghost" type="button">Шаг</button>
+            <button id="sgd-reset" class="btn-action ghost" type="button">Сброс</button>
+            <button id="sgd-regen" class="btn-action ghost" type="button">Новые данные</button>
+          </div>
+
+          <div class="demo-pair">
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="sgd-data" class="demo-canvas" width="360" height="300"
+                      aria-label="Данные и текущая прямая"></canvas>
+              <figcaption>данные · текущая прямая ŷ = w·x + b</figcaption>
+            </figure>
+            <figure class="demo-canvas-wrap" style="margin:0">
+              <canvas id="sgd-loss" class="demo-canvas" width="360" height="300"
+                      aria-label="Поверхность потерь и траектория спуска"></canvas>
+              <figcaption>поверхность потерь L(w, b) · след спуска</figcaption>
+            </figure>
+          </div>
+
+          <div class="stat-list" style="margin-top:1.5em;display:grid;grid-template-columns:repeat(auto-fit,minmax(14ch,1fr));gap:.4em 2ch">
+            <p><strong>шаг</strong>: <span id="sgd-step-n" class="num">0</span></p>
+            <p><strong>w</strong> = <span id="sgd-w" class="num">—</span></p>
+            <p><strong>b</strong> = <span id="sgd-b" class="num">—</span></p>
+            <p><strong>loss</strong> = <span id="sgd-loss-v" class="num alt">—</span></p>
+            <p id="sgd-status" style="grid-column:1/-1;opacity:.8;min-height:1.6em"></p>
+          </div>
+        </div>
+
+        <h2>Что важно унести</h2>
+        <ol>
+          <li><strong>Функция потерь</strong> превращает «модель ошибается» в число, которое можно минимизировать.</li>
+          <li><strong>SGD</strong> — рабочая лошадка обучения: маленькие шаги против градиента по случайным пачкам данных.</li>
+          <li><strong>Регуляризация</strong> штрафует сложность (большие веса) и борется с переобучением.</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script src="layout.js"></script>
+  <script src="demo-utils.js"></script>
+  <script src="sgd-regression.js"></script>
+</body>
+</html>
