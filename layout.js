@@ -35,12 +35,9 @@
         { slug: "dbscan", n: "5.3", title: "DBSCAN", desc: "Кластеры по плотности, шум и выбросы." },
       ],
     },
-    { n: "6", slug: "neural-networks", title: "Полносвязные нейросети", desc: "Многослойный перцептрон и обратное распространение." },
-    { n: "7", slug: "cnn", title: "Свёрточные сети (CNN)", desc: "Свёртки, ядра и пулинг в компьютерном зрении." },
-    { n: "8", slug: "nlp", title: "Обработка языка (NLP)", desc: "word2vec, RNN/LSTM/GRU и трансформеры." },
   ];
 
-  // Flattened ordered list of leaf pages (for prev/next + search).
+  // Flattened ordered list of leaf pages for sidebar state and search.
   var PAGES = [];
   CHAPTERS.forEach(function (ch) {
     if (ch.items) ch.items.forEach(function (it) { PAGES.push(it); });
@@ -108,32 +105,6 @@
     return s;
   }
 
-  // ===== Footer ===========================================================
-  function buildFooter() {
-    var cur = current();
-    var idx = cur ? PAGES.indexOf(cur) : -1;
-    var navHtml = "";
-    if (idx !== -1) {
-      var prev = PAGES[idx - 1];
-      var next = PAGES[idx + 1];
-      if (prev || next) {
-        navHtml += '<nav class="lesson-nav">';
-        if (prev) navHtml += '<a class="lesson-nav-link prev" href="' + prev.slug + '.html">← ' + (prev.n ? prev.n + " · " : "") + prev.title + "</a>";
-        if (next) navHtml += '<a class="lesson-nav-link next" href="' + next.slug + '.html">' + (next.n ? next.n + " · " : "") + next.title + " →</a>";
-        navHtml += "</nav>";
-      }
-    }
-    var footer = document.createElement("footer");
-    footer.className = "site-footer-wrap";
-    footer.innerHTML =
-      navHtml +
-      '<div class="site-footer">' +
-        "<p>Copyright (c) 2008–2026 ML Lab · собрано с любовью к градиентам</p>" +
-        '<a href="index.html">Site Map</a>' +
-      "</div>";
-    return footer;
-  }
-
   // ===== TOC drawer ========================================================
   function initToc() {
     var sidebar = document.getElementById("course-sidebar");
@@ -164,7 +135,6 @@
     document.body.appendChild(buildScrim());
     var main = blocks.querySelector(".site-main");
     if (page !== "about") blocks.insertBefore(buildHeader(), main);
-    blocks.appendChild(buildFooter());
     initToc();
   }
 

@@ -72,7 +72,7 @@ a:focus-visible {
 }
 
 .site-header {
-  margin-bottom: 2em;
+  margin-bottom: 1.5em;
 }
 
 .header-top {
@@ -80,7 +80,7 @@ a:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 1ch 2ch;
-  padding: var(--spacing-50) 0;
+  padding: 1.5em 0;
   border-bottom: 0.5em solid var(--midtone);
 }
 
@@ -153,7 +153,7 @@ a:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-40);
-  padding: var(--spacing-40) 0;
+  padding: 0.75em 0;
 }
 
 .main-nav {
@@ -163,7 +163,7 @@ a:focus-visible {
 }
 
 .main-nav a {
-  padding: 0.5ch 1ch;
+  padding: 0.35ch 0.8ch;
   border: 1px solid transparent;
 }
 
@@ -215,7 +215,7 @@ a:focus-visible {
 }
 
 .site-main {
-  margin-bottom: 2em;
+  margin-bottom: 6em;
 }
 
 .content-area > * {
@@ -230,27 +230,12 @@ h1, h2, h3, h4, h5, h6 {
   margin: 2rem 0 1rem;
 }
 
-h2::before { content: "## "; opacity: 0.3; }
-h3::before { content: "### "; opacity: 0.3; }
-
 .align-center {
   text-align: center;
 }
 
 p {
   margin: 0 0 2em;
-}
-
-strong::before,
-strong::after {
-  content: "**";
-  opacity: 0.3;
-}
-
-em::before,
-em::after {
-  content: "*";
-  opacity: 0.3;
 }
 
 .accent-box {
@@ -296,19 +281,6 @@ hr {
   border-top: 2px solid var(--midtone);
   margin: 2em auto;
   opacity: 0.5;
-}
-
-.site-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 1ch 2ch;
-  padding: var(--spacing-50) 0;
-  border-top: 0.5em solid var(--midtone);
-}
-
-.site-footer p {
-  margin: 0;
 }
 
 .roc-demo {
@@ -419,29 +391,18 @@ hr {
    Course components
    =================================================================== */
 
-/* --- Hero / lesson meta --- */
-.lesson-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1ch 2ch;
-  align-items: baseline;
-  margin: 0 0 1em;
-  font-size: 0.85em;
-  opacity: 0.8;
-}
-
-.lesson-meta .tag {
-  border: var(--spacing-10) solid var(--accent);
-  color: var(--accent);
-  padding: 0 0.8ch;
-}
-
+/* --- Hero --- */
 .lesson-kicker {
   color: var(--accent);
   letter-spacing: 0.1ch;
-  margin: 0 0 0.5em;
+  line-height: 1.2;
+  margin: 2em 0 1.6em;
   text-transform: uppercase;
   font-size: 0.8em;
+}
+
+.lesson-kicker + h1 {
+  margin-top: 0;
 }
 
 /* --- Demo box (generalised from roc-demo) --- */
@@ -632,27 +593,6 @@ pre code {
 }
 .tok-com {
   opacity: 0.5;
-}
-
-/* --- Lesson prev/next nav --- */
-.lesson-nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1ch;
-  margin: 3em auto 1em;
-}
-
-.lesson-nav-link {
-  border: var(--spacing-10) solid var(--midtone);
-  padding: 1ch 1.5ch;
-  text-decoration: none !important;
-  font-size: 0.9em;
-}
-
-.lesson-nav-link.next {
-  margin-left: auto;
-  text-align: right;
 }
 
 /* keep legacy ROC markup working by aliasing to the generic look */
