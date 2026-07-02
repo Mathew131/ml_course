@@ -16,16 +16,16 @@
         { slug: "svm", n: "1.4", title: "Метод опорных векторов", desc: "Максимальный зазор, опорные векторы, параметр C." },
       ],
     },
-    { n: "2", slug: "decision-trees", title: "Решающие деревья", desc: "Жадные пороговые разбиения и критерий Джини." },
+    { n: "2", slug: "metrics", title: "Оценка качества моделей", desc: "Метрики регрессии и классификации, ROC-AUC." },
+    { n: "3", slug: "decision-trees", title: "Решающие деревья", desc: "Жадные пороговые разбиения и критерий Джини." },
     {
-      n: "3",
+      n: "4",
       title: "Ансамбли",
       items: [
-        { slug: "random-forest", n: "3.1", title: "Случайный лес", desc: "Бэггинг: усреднение множества деревьев." },
-        { slug: "gradient-boosting", n: "3.2", title: "Градиентный бустинг", desc: "Последовательное исправление ошибок." },
+        { slug: "random-forest", n: "4.1", title: "Случайный лес", desc: "Бэггинг: усреднение множества деревьев." },
+        { slug: "gradient-boosting", n: "4.2", title: "Градиентный бустинг", desc: "Последовательное исправление ошибок." },
       ],
     },
-    { n: "4", slug: "metrics", title: "Оценка качества моделей", desc: "Метрики регрессии и классификации, ROC-AUC." },
     {
       n: "5",
       title: "Кластеризация",
@@ -76,16 +76,21 @@
 
     var html = '<nav class="toc-nav">';
     CHAPTERS.forEach(function (ch) {
-      html += '<div class="toc-chapter">';
       if (ch.items) {
-        html += '<p class="toc-chapter-title"><span class="toc-n">' + ch.n + "</span> " + ch.title + "</p>";
-        html += "<ul>";
+        var listId = "toc-list-" + ch.n;
+        html += '<div class="toc-chapter toc-collapsible" data-toc-chapter="' + ch.n + '">';
+        html += '<button class="toc-chapter-title" type="button" aria-expanded="true" aria-controls="' + listId + '">';
+        html += '<span><span class="toc-n">' + ch.n + "</span> " + ch.title + "</span>";
+        html += '<span class="toc-caret" aria-hidden="true">▾</span>';
+        html += "</button>";
+        html += '<ul id="' + listId + '">';
         ch.items.forEach(function (it) {
           var active = it.slug === page ? ' class="active"' : "";
           html += '<li' + active + '><a href="' + it.slug + '.html"><span class="toc-n">' + it.n + "</span> " + it.title + "</a></li>";
         });
         html += "</ul>";
       } else {
+        html += '<div class="toc-chapter">';
         var act = ch.slug === page ? ' class="active toc-leaf"' : ' class="toc-leaf"';
         var num = ch.n ? '<span class="toc-n">' + ch.n + "</span> " : "";
         html += '<p' + act + '><a href="' + ch.slug + '.html">' + num + ch.title + "</a></p>";
@@ -121,6 +126,34 @@
       });
     }
     if (scrim) scrim.addEventListener("click", close);
+
+    sidebar.querySelectorAll(".toc-collapsible").forEach(function (chapter) {
+      var button = chapter.querySelector(".toc-chapter-title");
+      var list = chapter.querySelector("ul");
+      if (!button || !list) return;
+
+      var key = "ml-course-toc-" + chapter.getAttribute("data-toc-chapter");
+      var hasActive = !!chapter.querySelector(".active");
+      var saved = null;
+      try {
+        saved = localStorage.getItem(key);
+      } catch (e) {}
+      var expanded = hasActive || saved === "open";
+
+      function setExpanded(next) {
+        button.setAttribute("aria-expanded", next ? "true" : "false");
+        list.hidden = !next;
+        chapter.classList.toggle("collapsed", !next);
+        try {
+          localStorage.setItem(key, next ? "open" : "closed");
+        } catch (e) {}
+      }
+
+      setExpanded(expanded);
+      button.addEventListener("click", function () {
+        setExpanded(button.getAttribute("aria-expanded") !== "true");
+      });
+    });
 
     // active item scrolled into view inside sidebar
     var act = sidebar.querySelector(".active");

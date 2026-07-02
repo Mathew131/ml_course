@@ -126,6 +126,32 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.about-resume {
+  border-left: 0.5em solid var(--accent);
+  padding: 0.5em 0 0.5em 2ch;
+  margin: 2em auto;
+}
+
+.about-resume h2 {
+  margin-top: 0;
+}
+
+.resume-grid {
+  display: grid;
+  gap: 1.2em 3ch;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24ch), 1fr));
+}
+
+.resume-grid h3 {
+  color: var(--accent);
+  margin: 0 0 0.5em;
+}
+
+.resume-grid p {
+  margin: 0;
+  line-height: 1.7;
+}
+
 .btn-resume {
   display: inline-block;
   background-color: var(--btn-bg);
@@ -702,9 +728,32 @@ pre code {
   margin-bottom: 1.2em;
 }
 .toc-chapter-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1ch;
+  width: 100%;
   margin: 0 0 0.4em;
+  padding: 0.2ch 0.6ch;
+  border: 0;
+  background: transparent;
+  font: inherit;
   font-weight: 700;
   color: var(--contrast);
+  text-align: left;
+  cursor: pointer;
+}
+.toc-chapter-title:hover,
+.toc-chapter-title:focus-visible {
+  color: var(--primary);
+  outline: none;
+}
+.toc-caret {
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+.toc-collapsible.collapsed .toc-caret {
+  transform: rotate(-90deg);
 }
 .toc-chapter ul {
   list-style: none;
